@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Life Tracker</title>
+<style>
+:root{
+ --bg:#0b0d12;--card:#151821;--card2:#1b1f2a;--text:#f5f7fb;--muted:#9aa1af;
+ --line:#292e3a;--accent:#8b7cff;--accent2:#6ee7b7;--danger:#ff6b81;
+}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0%,#20204a 0,#0b0d12 38%),var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+.app{max-width:780px;margin:auto;padding:22px 15px 55px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+h1{font-size:29px;margin:0;font-weight:850;letter-spacing:-.7px}.date{color:var(--muted);font-size:13px;margin-top:4px}
+button{border:0;border-radius:12px;padding:10px 13px;font-weight:750;cursor:pointer;background:var(--accent);color:#fff}
+.topBtns{display:flex;gap:7px}.ghost{background:var(--card2);border:1px solid var(--line);color:var(--text)}
+.hero,.panel,.section{background:rgba(21,24,33,.94);border:1px solid var(--line);border-radius:22px}
+.hero{padding:20px;margin-bottom:13px}.row{display:flex;justify-content:space-between;align-items:end}.sub{font-size:11px;color:var(--muted);letter-spacing:.5px}.percent{font-size:42px;font-weight:900;margin-top:2px}
+.bar{height:10px;background:#242936;border-radius:20px;overflow:hidden;margin-top:15px}.fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:.25s}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:13px}.stat{background:var(--card2);border-radius:15px;padding:11px}.stat b{font-size:20px;display:block}.stat span{font-size:11px;color:var(--muted)}
+.quote{padding:17px 18px;margin:13px 0;background:linear-gradient(135deg,#181a2b,#151821);border:1px solid #33344e;border-radius:18px}.quoteText{font-size:14px;line-height:1.5;font-weight:650}.quoteBy{font-size:11px;color:var(--muted);margin-top:7px}
+.section{margin-top:16px;padding:14px}.sectionHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.sectionHead h2{font-size:17px;margin:0}.sectionBtns{display:flex;gap:5px}.mini{padding:6px 8px;font-size:11px;background:var(--card2);border:1px solid var(--line)}
+.task{background:#191d26;border:1px solid #252a35;border-radius:14px;padding:11px 10px;display:flex;align-items:center;gap:10px;margin:7px 0}.task input{width:20px;height:20px;accent-color:var(--accent);cursor:pointer}.task label{flex:1;cursor:pointer}.task.done{border-color:#293d36}.task.done label{text-decoration:line-through;color:#777f8e}
+.iconBtn{padding:5px 7px;background:transparent;color:#7e8593;font-size:15px}.iconBtn:hover{color:#fff}
+.add{width:100%;background:transparent;border:1px dashed #414653;color:#b5bbc7;margin-top:7px}.add:hover{border-color:var(--accent);color:#fff}
+.streak{margin-top:13px;padding:15px 17px;background:var(--card);border:1px solid var(--line);border-radius:18px;display:flex;justify-content:space-between;align-items:center}.streak b{font-size:22px}.streak span{color:var(--muted);font-size:11px}
+.modal{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;padding:15px;z-index:10}.modal.show{display:flex}.modalBox{width:min(520px,100%);background:#151821;border:1px solid var(--line);border-radius:22px;padding:20px;max-height:90vh;overflow:auto}.modalBox h2{margin-top:0}
+input[type=text]{width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:#0f1219;color:#fff;outline:none}.modalActions{display:flex;gap:8px;margin-top:12px}.modalActions button{flex:1}
+.historyGrid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}.histDay{background:#1a1e27;border-radius:11px;padding:8px 3px;text-align:center;font-size:10px;color:var(--muted);cursor:pointer}.histDay strong{display:block;color:#fff;font-size:13px;margin:4px}.histDay.good{border:1px solid #3b8d6b;background:#172b25}.histDay.today{outline:2px solid var(--accent)}
+.historyDetail{margin-top:14px;border-top:1px solid var(--line);padding-top:13px}.detailRow{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #242934;font-size:12px}.detailRow span:last-child{color:var(--muted)}
+.close{background:transparent;color:#aaa;float:right;padding:3px 7px;font-size:20px}
+@media(max-width:500px){.app{padding:17px 11px 45px}.top{align-items:flex-start}.topBtns{flex-wrap:wrap;justify-content:flex-end}.percent{font-size:36px}}
+</style>
+</head>
+<body>
+<div class="app">
+ <div class="top">
+  <div><h1>Life Tracker</h1><div class="date" id="date"></div></div>
+  <div class="topBtns"><button class="ghost" onclick="openHistory()">📅 History</button><button onclick="openAdd()">＋ Add</button></div>
+ </div>
+
+ <div class="hero">
+  <div class="row"><div><div class="sub">TODAY'S PROGRESS</div><div class="percent" id="percent">0%</div></div><div class="sub" id="count">0 / 0 completed</div></div>
+  <div class="bar"><div class="fill" id="fill"></div></div>
+  <div class="stats"><div class="stat"><b id="done">0</b><span>Completed</span></div><div class="stat"><b id="remaining">0</b><span>Remaining</span></div><div class="stat"><b id="best">0</b><span>Best streak</span></div></div>
+ </div>
+
+ <div class="quote"><div class="quoteText" id="quote"></div><div class="quoteBy" id="quoteBy"></div></div>
+ <div class="streak"><div><div class="sub">CURRENT STREAK</div><b>🔥 <span id="streak">0</span> days</b></div><div>✓</div></div>
+ <div id="sections"></div>
+ <button class="ghost" style="width:100%;margin-top:14px" onclick="resetToday()">Reset today's checkboxes</button>
+</div>
+
+<div class="modal" id="modal"><div class="modalBox" id="modalBox"></div></div>
+
+<script>
+const defaultSections=[
+{name:"🌅 Morning",items:["Wake up at my planned time","Drink water","Workout","Shower / grooming","Morning skincare","Breakfast","Plan my day"]},
+{name:"🕌 Salah & Deen",items:["Fajr","Dhuhr","Asr","Maghrib","Isha","Qur'an / recitation","Dhikr"]},
+{name:"💪 Body & Glow-up",items:["Complete today's workout","Hit my calorie / protein target","Drink my water target","Morning skincare","Night skincare","Hair care","Grooming"]},
+{name:"🧠 Mind & Character",items:["Meditation","Do one difficult thing","Read / learn something","Talk to someone / socialise","Dance practice"]},
+{name:"📱 Digital Discipline",items:["Stay within my screen-time limit","Avoid unnecessary scrolling","Keep my phone away during focused work","No phone in bed"]},
+{name:"🌙 Night",items:["Review my day","Prepare tomorrow","Night skincare","Put my phone away","Sleep at my planned time"]}
+];
+const quotes=[
+["Start before you feel ready.","— Daily reminder"],
+["Your future is built by what you do today.","— Daily reminder"],
+["Small actions become big changes.","— Daily reminder"],
+["You don't need motivation. You need movement.","— Daily reminder"],
+["Become someone your future self respects.","— Daily reminder"],
+["One disciplined day can change your direction.","— Daily reminder"],
+["Stop waiting for the perfect moment.","— Daily reminder"],
+["Your habits are shaping your identity.","— Daily reminder"],
+["Do it even when nobody is watching.","— Daily reminder"],
+["Progress starts the moment excuses end.","— Daily reminder"],
+["You are not stuck. You are simply not finished.","— Daily reminder"],
+["Make today count.","— Daily reminder"],
+["Discipline is choosing what you want most over what you want now.","— Daily reminder"],
+["A better life requires better daily choices.","— Daily reminder"],
+["Don't chase perfection. Chase consistency.","— Daily reminder"],
+["Your comeback begins with one decision.","— Daily reminder"],
+["Do the next right thing.","— Daily reminder"],
+["You don't need a new life. You need better habits.","— Daily reminder"],
+["Action creates confidence.","— Daily reminder"],
+["Build yourself quietly.","— Daily reminder"],
+["Your standards determine your direction.","— Daily reminder"],
+["Win the morning, then build the day.","— Daily reminder"],
+["Every repetition is an investment.","— Daily reminder"],
+["Don't negotiate with your goals.","— Daily reminder"],
+["You become what you repeatedly practice.","— Daily reminder"],
+["Make discipline your default.","— Daily reminder"],
+["Today is another chance to improve.","— Daily reminder"],
+["Your effort matters even when results are invisible.","— Daily reminder"],
+["Keep going. You're building something.","— Daily reminder"],
+["Be better than yesterday.","— Daily reminder"],
+["Discipline works when motivation disappears.","— Daily reminder"],
+["Do what you said you would do.","— Daily reminder"],
+["Comfort is easy. Growth is earned.","— Daily reminder"],
+["Keep promises to yourself.","— Daily reminder"],
+["Your habits don't lie.","— Daily reminder"],
+["Consistency beats intensity.","— Daily reminder"],
+["Don't let a bad hour become a bad day.","— Daily reminder"],
+["Do it tired. Do it slowly. Just don't quit.","— Daily reminder"],
+["The hard choice today creates an easier tomorrow.","— Daily reminder"],
+["Discipline is self-respect in action.","— Daily reminder"],
+["You don't rise to your goals; you fall to your habits.","— Daily reminder"],
+["Make excuses smaller than your goals.","— Daily reminder"],
+["A little progress is still progress.","— Daily reminder"],
+["Train yourself to finish what you start.","— Daily reminder"],
+["Don't break the chain unnecessarily.","— Daily reminder"],
+["Your future doesn't need excuses.","— Daily reminder"],
+["Do the boring things exceptionally well.","— Daily reminder"],
+["Consistency turns ordinary effort into extraordinary results.","— Daily reminder"],
+["The days you don't feel like it matter most.","— Daily reminder"],
+["Choose progress over comfort.","— Daily reminder"],
+["Discipline today, freedom tomorrow.","— Daily reminder"],
+["Don't wait for pressure to create action.","— Daily reminder"],
+["You control the next decision.","— Daily reminder"],
+["Show up. That's the first victory.","— Daily reminder"],
+["Your standards should survive your mood.","— Daily reminder"],
+["Do less talking. Do more becoming.","— Daily reminder"],
+["Make your routine stronger than your excuses.","— Daily reminder"],
+["Self-control is a superpower you can practice.","— Daily reminder"],
+["The easiest way forward is still forward.","— Daily reminder"],
+["Keep your word to yourself.","— Daily reminder"],
+["Your glow-up starts with how you treat yourself.","— Daily reminder"],
+["Look better by living better.","— Daily reminder"],
+["Clean habits create a cleaner life.","— Daily reminder"],
+["Take care of the body carrying you forward.","— Daily reminder"],
+["Confidence grows from keeping promises to yourself.","— Daily reminder"],
+["Good grooming is preparation, not vanity.","— Daily reminder"],
+["Train your body. Sharpen your mind.","— Daily reminder"],
+["Your appearance reflects many of your habits.","— Daily reminder"],
+["Healthy looks good.","— Daily reminder"],
+["Take pride in the details.","— Daily reminder"],
+["The glow-up is a lifestyle, not a transformation day.","— Daily reminder"],
+["Build a body you are proud to maintain.","— Daily reminder"],
+["Eat well. Sleep well. Move well.","— Daily reminder"],
+["Your best look starts with your best habits.","— Daily reminder"],
+["Clean room. Clean body. Clear mind.","— Daily reminder"],
+["Take care of yourself before asking the world to notice you.","— Daily reminder"],
+["Confidence is built, not purchased.","— Daily reminder"],
+["Style improves when self-respect improves.","— Daily reminder"],
+["Your routine is part of your appearance.","— Daily reminder"],
+["Small grooming habits create a polished presence.","— Daily reminder"],
+["Strong habits create a stronger version of you.","— Daily reminder"],
+["Don't compare your beginning to someone else's result.","— Daily reminder"],
+["Take progress photos, not permission.","— Daily reminder"],
+["Build health before chasing aesthetics.","— Daily reminder"],
+["Your body deserves consistency.","— Daily reminder"],
+["Looking better feels better when you earned it.","— Daily reminder"],
+["Become comfortable taking care of yourself.","— Daily reminder"],
+["Your glow-up should improve your life, not just your mirror.","— Daily reminder"],
+["Healthy confidence needs no performance.","— Daily reminder"],
+["The best glow-up is becoming disciplined.","— Daily reminder"],
+["One workout won't change you. Hundreds might.","— Daily reminder"],
+["Train because your body deserves strength.","— Daily reminder"],
+["Don't underestimate simple exercises done consistently.","— Daily reminder"],
+["Progressive effort creates progressive results.","— Daily reminder"],
+["Strength is built one repetition at a time.","— Daily reminder"],
+["Your body adapts to what you repeatedly demand from it.","— Daily reminder"],
+["Don't skip because today feels ordinary.","— Daily reminder"],
+["Every workout is a vote for the person you're becoming.","— Daily reminder"],
+["Train with patience.","— Daily reminder"],
+["Strong is built, not wished for.","— Daily reminder"],
+["Focus on form before ego.","— Daily reminder"],
+["Your only competition today is yesterday's you.","— Daily reminder"],
+["A short workout beats another hour of scrolling.","— Daily reminder"],
+["Movement is medicine for a stagnant day.","— Daily reminder"],
+["Train consistently, recover intelligently.","— Daily reminder"],
+["Your body remembers your habits.","— Daily reminder"],
+["Don't chase soreness. Chase progress.","— Daily reminder"],
+["Strength takes time. Give it time.","— Daily reminder"],
+["Keep showing up.","— Daily reminder"],
+["Earn your confidence through action.","— Daily reminder"],
+["Train even when nobody compliments you.","— Daily reminder"],
+["Your future physique is being built today.","— Daily reminder"],
+["Don't rush results that require patience.","— Daily reminder"],
+["One more controlled repetition.","— Daily reminder"],
+["Fitness is a long game.","— Daily reminder"],
+["Make movement part of who you are.","— Daily reminder"],
+["Strong habits create strong bodies.","— Daily reminder"],
+["Respect the process.","— Daily reminder"],
+["Progress is often invisible before it becomes obvious.","— Daily reminder"],
+["Keep training.","— Daily reminder"],
+["A calm mind makes better decisions.","— Daily reminder"],
+["Protect your attention.","— Daily reminder"],
+["Your mind needs training too.","— Daily reminder"],
+["Learn something every day.","— Daily reminder"],
+["Think before reacting.","— Daily reminder"],
+["Silence can teach you things noise cannot.","— Daily reminder"],
+["Your attention is one of your greatest assets.","— Daily reminder"],
+["Don't let every thought become a command.","— Daily reminder"],
+["Pause. Breathe. Choose.","— Daily reminder"],
+["Mental strength begins with self-control.","— Daily reminder"],
+["Read more. Scroll less.","— Daily reminder"],
+["Curiosity keeps you growing.","— Daily reminder"],
+["Your environment shapes your thinking.","— Daily reminder"],
+["Feed your mind something useful.","— Daily reminder"],
+["A distracted mind struggles to build anything.","— Daily reminder"],
+["Protect your peace without avoiding your responsibilities.","— Daily reminder"],
+["Think long-term.","— Daily reminder"],
+["Learn to sit with discomfort.","— Daily reminder"],
+["Not every problem needs an immediate reaction.","— Daily reminder"],
+["Clarity comes from action as often as thought.","— Daily reminder"],
+["Train your attention like a muscle.","— Daily reminder"],
+["Your thoughts influence your choices.","— Daily reminder"],
+["Choose what deserves your mental energy.","— Daily reminder"],
+["Don't confuse thinking with doing.","— Daily reminder"],
+["Learn. Apply. Repeat.","— Daily reminder"],
+["Your mind becomes stronger when you challenge it.","— Daily reminder"],
+["Stay curious.","— Daily reminder"],
+["Question your excuses.","— Daily reminder"],
+["A focused hour can change a day.","— Daily reminder"],
+["Clear mind. Clear direction.","— Daily reminder"],
+["Confidence begins with keeping promises to yourself.","— Daily reminder"],
+["You don't need everyone's approval.","— Daily reminder"],
+["Walk into rooms like you belong there.","— Daily reminder"],
+["Speak clearly. Stand straight. Stay calm.","— Daily reminder"],
+["Confidence grows through exposure.","— Daily reminder"],
+["Stop rehearsing rejection before it happens.","— Daily reminder"],
+["Talk to people.","— Daily reminder"],
+["Don't hide behind your phone.","— Daily reminder"],
+["Being awkward is part of getting better socially.","— Daily reminder"],
+["You become confident by doing uncomfortable things.","— Daily reminder"],
+["Don't wait to feel confident before acting.","— Daily reminder"],
+["Your voice deserves to be heard.","— Daily reminder"],
+["Listen more. React less.","— Daily reminder"],
+["Confidence isn't loudness.","— Daily reminder"],
+["Be comfortable being yourself.","— Daily reminder"],
+["Don't perform. Connect.","— Daily reminder"],
+["Respect yourself without needing superiority.","— Daily reminder"],
+["You don't need to impress everyone.","— Daily reminder"],
+["Be present instead of self-conscious.","— Daily reminder"],
+["Courage comes before confidence.","— Daily reminder"],
+["Make eye contact.","— Daily reminder"],
+["Ask the question.","— Daily reminder"],
+["Start the conversation.","— Daily reminder"],
+["Take the opportunity.","— Daily reminder"],
+["You can't improve a social skill you never practice.","— Daily reminder"],
+["Don't fear being a beginner.","— Daily reminder"],
+["Your presence improves when your mind is present.","— Daily reminder"],
+["Confidence is earned through evidence.","— Daily reminder"],
+["Give yourself reasons to trust yourself.","— Daily reminder"],
+["Step forward.","— Daily reminder"],
+["Character is what remains when nobody is watching.","— Daily reminder"],
+["Be the person you claim to be.","— Daily reminder"],
+["Keep your word.","— Daily reminder"],
+["Take responsibility quickly.","— Daily reminder"],
+["Admit mistakes without making excuses.","— Daily reminder"],
+["Treat people well without needing something from them.","— Daily reminder"],
+["Strength includes self-control.","— Daily reminder"],
+["Respect is earned through consistency.","— Daily reminder"],
+["Do the right thing when it's inconvenient.","— Daily reminder"],
+["Your character is built in ordinary moments.","— Daily reminder"],
+["Don't let ego control your decisions.","— Daily reminder"],
+["Listen before judging.","— Daily reminder"],
+["Be firm without being cruel.","— Daily reminder"],
+["Be humble without becoming passive.","— Daily reminder"],
+["Own your actions.","— Daily reminder"],
+["Apologize when you're wrong.","— Daily reminder"],
+["Learn from criticism without becoming controlled by it.","— Daily reminder"],
+["Your standards should apply to you first.","— Daily reminder"],
+["Choose integrity over appearance.","— Daily reminder"],
+["Become dependable.","— Daily reminder"],
+["Let your actions speak.","— Daily reminder"],
+["Don't seek respect through intimidation.","— Daily reminder"],
+["Control your temper.","— Daily reminder"],
+["Patience is strength under control.","— Daily reminder"],
+["Keep improving your character.","— Daily reminder"],
+["Be someone people can trust.","— Daily reminder"],
+["Don't betray yourself for approval.","— Daily reminder"],
+["Good character compounds too.","— Daily reminder"],
+["Become harder to shake and easier to trust.","— Daily reminder"],
+["Build a character worth being proud of.","— Daily reminder"],
+["Do the important thing first.","— Daily reminder"],
+["Your phone can wait. Your life cannot.","— Daily reminder"],
+["Focus beats frantic activity.","— Daily reminder"],
+["One task at a time.","— Daily reminder"],
+["Start with five minutes.","— Daily reminder"],
+["Remove distractions before demanding focus.","— Daily reminder"],
+["Make your environment support your goals.","— Daily reminder"],
+["Don't confuse busy with productive.","— Daily reminder"],
+["Finish before starting something new.","— Daily reminder"],
+["Your attention has a cost. Spend it carefully.","— Daily reminder"],
+["Plan less. Execute more.","— Daily reminder"],
+["A simple plan you follow beats a perfect plan you ignore.","— Daily reminder"],
+["Protect your best hours.","— Daily reminder"],
+["Turn intentions into actions.","— Daily reminder"],
+["Make today's priorities visible.","— Daily reminder"],
+["Don't let notifications run your life.","— Daily reminder"],
+["Work first. Reward later.","— Daily reminder"],
+["Start now, improve along the way.","— Daily reminder"],
+["Momentum makes work easier.","— Daily reminder"],
+["Don't wait for urgency.","— Daily reminder"],
+["Small focused sessions add up.","— Daily reminder"],
+["Make progress measurable.","— Daily reminder"],
+["Remove one unnecessary distraction today.","— Daily reminder"],
+["Finish one thing you have been avoiding.","— Daily reminder"],
+["Your future benefits from today's boring work.","— Daily reminder"],
+["Use your time deliberately.","— Daily reminder"],
+["Don't waste your best energy on your phone.","— Daily reminder"],
+["Focus is a competitive advantage.","— Daily reminder"],
+["Do less, but do it properly.","— Daily reminder"],
+["Make today productive, not merely busy.","— Daily reminder"],
+["Bad days don't erase good progress.","— Daily reminder"],
+["Fall off. Get back on.","— Daily reminder"],
+["A setback is not a new identity.","— Daily reminder"],
+["Don't turn one mistake into a week of mistakes.","— Daily reminder"],
+["You can restart today.","— Daily reminder"],
+["Difficult seasons don't last forever.","— Daily reminder"],
+["Keep moving while you figure things out.","— Daily reminder"],
+["You don't need to feel strong to act strong.","— Daily reminder"],
+["Learn from failure instead of decorating it with excuses.","— Daily reminder"],
+["Pressure can reveal what needs strengthening.","— Daily reminder"],
+["Adapt without abandoning your direction.","— Daily reminder"],
+["Progress rarely looks perfect.","— Daily reminder"],
+["Don't quit because progress is slow.","— Daily reminder"],
+["Patience is part of resilience.","— Daily reminder"],
+["Your worst day is not your whole story.","— Daily reminder"],
+["Reset. Refocus. Continue.","— Daily reminder"],
+["You are allowed to start again.","— Daily reminder"],
+["Don't let embarrassment stop growth.","— Daily reminder"],
+["The lesson is more valuable than the mistake.","— Daily reminder"],
+["Keep your standards during difficult weeks.","— Daily reminder"],
+["One bad decision doesn't require another.","— Daily reminder"],
+["Take the hit. Learn. Move forward.","— Daily reminder"],
+["You don't need an easy path. You need a sustainable one.","— Daily reminder"],
+["Stay in the game.","— Daily reminder"],
+["Consistency includes returning after failure.","— Daily reminder"],
+["Don't make temporary feelings permanent decisions.","— Daily reminder"],
+["Difficult doesn't mean impossible.","— Daily reminder"],
+["Keep your direction even when your pace changes.","— Daily reminder"],
+["Recovery is part of progress.","— Daily reminder"],
+["Continue.","— Daily reminder"],
+["Don't forget to actually live while improving yourself.","— Daily reminder"],
+["Make memories, not just metrics.","— Daily reminder"],
+["Spend time with people who matter.","— Daily reminder"],
+["Put the phone down and experience the moment.","— Daily reminder"],
+["Enjoy progress without constantly measuring it.","— Daily reminder"],
+["Your life is happening today.","— Daily reminder"],
+["Make ordinary days meaningful.","— Daily reminder"],
+["Laugh more.","— Daily reminder"],
+["Go outside.","— Daily reminder"],
+["Try something new.","— Daily reminder"],
+["Don't postpone happiness until you're perfect.","— Daily reminder"],
+["Take care of your relationships.","— Daily reminder"],
+["Be present with the people in front of you.","— Daily reminder"],
+["A good life needs more than achievement.","— Daily reminder"],
+["Build a life you don't constantly need to escape from.","— Daily reminder"],
+["Rest without guilt when rest is deserved.","— Daily reminder"],
+["Appreciate what is already working.","— Daily reminder"],
+["Growth and gratitude can coexist.","— Daily reminder"],
+["Make time for what matters.","— Daily reminder"],
+["Don't let the algorithm choose your life.","— Daily reminder"],
+["Your attention determines your experience.","— Daily reminder"],
+["Protect your mornings and your relationships.","— Daily reminder"],
+["Create more than you consume.","— Daily reminder"],
+["Choose experiences over endless scrolling.","— Daily reminder"],
+["Be where your feet are.","— Daily reminder"],
+["Notice the small wins.","— Daily reminder"],
+["Enjoy the process you're working so hard to improve.","— Daily reminder"],
+["A meaningful life is built from ordinary days.","— Daily reminder"],
+["Don't rush through your own life.","— Daily reminder"],
+["Live deliberately.","— Daily reminder"],
+["Self-respect begins with self-discipline.","— Daily reminder"],
+["Stop abandoning yourself for temporary comfort.","— Daily reminder"],
+["Your boundaries matter.","— Daily reminder"],
+["Don't chase people who consistently choose not to show up.","— Daily reminder"],
+["Respect yourself enough to improve.","— Daily reminder"],
+["Don't insult yourself into becoming better.","— Daily reminder"],
+["Correction is better than self-hatred.","— Daily reminder"],
+["Treat yourself like someone worth developing.","— Daily reminder"],
+["Your mistakes don't cancel your worth.","— Daily reminder"],
+["Take responsibility without destroying your confidence.","— Daily reminder"],
+["You deserve your own effort.","— Daily reminder"],
+["Don't compare your entire life to someone's highlight reel.","— Daily reminder"],
+["Build internal confidence.","— Daily reminder"],
+["Your worth isn't measured by attention.","— Daily reminder"],
+["Don't beg for validation.","— Daily reminder"],
+["Be proud of progress without becoming complacent.","— Daily reminder"],
+["Respect your body.","— Daily reminder"],
+["Respect your time.","— Daily reminder"],
+["Respect your commitments.","— Daily reminder"],
+["Respect your future.","— Daily reminder"],
+["Choose standards over approval.","— Daily reminder"],
+["Say no when no is appropriate.","— Daily reminder"],
+["Don't betray your values for acceptance.","— Daily reminder"],
+["Take yourself seriously enough to improve.","— Daily reminder"],
+["Give yourself another chance.","— Daily reminder"],
+["You are responsible for the person you become.","— Daily reminder"],
+["Self-respect is built through action.","— Daily reminder"],
+["Don't wait for someone else to believe in you.","— Daily reminder"],
+["Become someone you can rely on.","— Daily reminder"],
+["Respect the person you're becoming.","— Daily reminder"],
+["You are still under construction.","— Daily reminder"],
+["Keep becoming.","— Daily reminder"],
+["Your habits are writing your future.","— Daily reminder"],
+["The goal isn't to become perfect. It's to become better.","— Daily reminder"],
+["Improve one thing today.","— Daily reminder"],
+["Your potential needs action.","— Daily reminder"],
+["Don't waste your ability through inaction.","— Daily reminder"],
+["You have more control than you think.","— Daily reminder"],
+["Build slowly. Build properly.","— Daily reminder"],
+["Let consistency surprise you.","— Daily reminder"],
+["Become disciplined enough to trust yourself.","— Daily reminder"],
+["Your future self is watching your choices.","— Daily reminder"],
+["Make tomorrow easier by acting today.","— Daily reminder"],
+["You don't need another fresh start. You need continuation.","— Daily reminder"],
+["Keep the promises that matter.","— Daily reminder"],
+["Don't chase overnight transformation.","— Daily reminder"],
+["Become 1% better where it matters.","— Daily reminder"],
+["The compound effect is real.","— Daily reminder"],
+["Every day is another brick.","— Daily reminder"],
+["Keep building.","— Daily reminder"],
+["Your direction matters more than your speed.","— Daily reminder"],
+["Don't underestimate a year of consistency.","— Daily reminder"],
+["A year from now, you'll wish you started today.","— Daily reminder"],
+["Make today's version proud.","— Daily reminder"],
+["Your future is shaped by ordinary decisions.","— Daily reminder"],
+["Keep your standards high and your ego low.","— Daily reminder"],
+["Stay patient with long-term goals.","— Daily reminder"],
+["Do the work. Let time do its part.","— Daily reminder"],
+["Become stronger without becoming harder-hearted.","— Daily reminder"],
+["Build a body, mind, and character you respect.","— Daily reminder"],
+["You don't need to be extraordinary today. Just don't stop improving.","— Daily reminder"],
+["Look back only to measure how far you've come.","— Daily reminder"],
+["Tomorrow starts with what you do today.","— Daily reminder"],
+["Keep going. You're closer than you were yesterday.","— Daily reminder"],
+["One year. One direction. A better version of you.","— Daily reminder"],
+];
+
+let data=JSON.parse(localStorage.getItem("lifeTrackerData")||"null")||defaultSections;
+let checks=JSON.parse(localStorage.getItem("lifeTrackerChecks")||"{}");
+let snapshots=JSON.parse(localStorage.getItem("lifeTrackerSnapshots")||"{}");
+
+function key(d=new Date()){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function save(){localStorage.setItem("lifeTrackerData",JSON.stringify(data));localStorage.setItem("lifeTrackerChecks",JSON.stringify(checks));localStorage.setItem("lifeTrackerSnapshots",JSON.stringify(snapshots))}
+function allIds(){let a=[];data.forEach((s,si)=>s.items.forEach((_,ii)=>a.push(si+"-"+ii)));return a}
+function completedCount(day){let c=checks[day]||{};return allIds().filter(id=>c[id]).length}
+function snapshotToday(){let k=key();snapshots[k]={sections:data.map((s,si)=>({name:s.name,items:s.items.map((x,ii)=>({name:x,done:!!(checks[k]?.[si+"-"+ii])}))}))};save()}
+function render(){
+ snapshotToday();
+ document.getElementById("date").textContent=new Date().toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+ const q=quotes[Math.floor(Date.now()/86400000)%quotes.length];document.getElementById("quote").textContent="“"+q[0]+"”";document.getElementById("quoteBy").textContent=q[1];
+ const wrap=document.getElementById("sections");wrap.innerHTML="";
+ data.forEach((s,si)=>{
+  const sec=document.createElement("div");sec.className="section";
+  sec.innerHTML=`<div class="sectionHead"><h2>${esc(s.name)}</h2><div class="sectionBtns"><button class="mini" onclick="renameSection(${si})">Edit</button><button class="mini" onclick="deleteSection(${si})">Delete</button></div></div>`;
+  s.items.forEach((item,ii)=>{
+   const id=si+"-"+ii,checked=!!checks[key()]?.[id];
+   const row=document.createElement("div");row.className="task"+(checked?" done":"");
+   row.innerHTML=`<input type="checkbox" ${checked?"checked":""}><label>${esc(item)}</label><button class="iconBtn" title="Edit habit">✎</button><button class="iconBtn" title="Delete habit">×</button>`;
+   row.querySelector("input").onchange=e=>toggle(id,e.target.checked);
+   row.querySelectorAll(".iconBtn")[0].onclick=()=>renameItem(si,ii);
+   row.querySelectorAll(".iconBtn")[1].onclick=()=>deleteItem(si,ii);
+   sec.appendChild(row);
+  });
+  const add=document.createElement("button");add.className="add";add.textContent="+ Add habit";add.onclick=()=>openAdd(si);sec.appendChild(add);
+  wrap.appendChild(sec);
+ });
+ update();
+}
+function toggle(id,val){checks[key()]??={};checks[key()][id]=val;save();render()}
+function update(){
+ let total=allIds().length,done=completedCount(key()),p=total?Math.round(done/total*100):0;
+ document.getElementById("percent").textContent=p+"%";document.getElementById("fill").style.width=p+"%";document.getElementById("count").textContent=`${done} / ${total} completed`;
+ document.getElementById("done").textContent=done;document.getElementById("remaining").textContent=total-done;document.getElementById("streak").textContent=getStreak();document.getElementById("best").textContent=getBest();
+}
+function getStreak(){let d=new Date(),n=0;while(true){if(completedCount(key(d))<allIds().length)break;n++;d.setDate(d.getDate()-1)}return n}
+function getBest(){let ks=Object.keys(snapshots).sort(),best=0,n=0;ks.forEach(k=>{let s=snapshots[k],total=s.sections.reduce((a,x)=>a+x.items.length,0),done=s.sections.reduce((a,x)=>a+x.items.filter(i=>i.done).length,0);if(total&&done===total)n++;else n=0;best=Math.max(best,n)});return best}
+function openAdd(si=null){showModal(`<button class="close" onclick="closeModal()">×</button><h2>Add ${si===null?"a section":"a habit"}</h2><input id="newText" type="text" placeholder="${si===null?"Section name":"Habit name"}><div class="modalActions"><button onclick="submitAdd(${si===null?"null":si})">Add</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`);setTimeout(()=>document.getElementById("newText").focus(),50)}
+function submitAdd(si){let v=document.getElementById("newText").value.trim();if(!v)return;if(si===null)data.push({name:v,items:[]});else data[si].items.push(v);save();closeModal();render()}
+function renameItem(si,ii){showPrompt("Edit habit",data[si].items[ii],v=>{if(v){data[si].items[ii]=v;save();render();}})}
+function renameSection(si){showPrompt("Edit section",data[si].name,v=>{if(v){data[si].name=v;save();render();}})}
+function showPrompt(title,value,fn){showModal(`<button class="close" onclick="closeModal()">×</button><h2>${title}</h2><input id="newText" type="text" value="${esc(value)}"><div class="modalActions"><button onclick="let v=document.getElementById('newText').value.trim();closeModal();(${fn.toString()})(v)">Save</button><button class="ghost" onclick="closeModal()">Cancel</button></div>`)}
+function deleteItem(si,ii){if(confirm("Delete this habit?")){data[si].items.splice(ii,1);save();render()}}
+function deleteSection(si){if(confirm("Delete this whole section and its habits?")){data.splice(si,1);save();render()}}
+function resetToday(){if(confirm("Reset all of today's checkboxes?")){delete checks[key()];save();render()}}
+function openHistory(){
+ let days=[];let d=new Date();d.setDate(1);
+ for(let i=0;i<35;i++){let x=new Date(d);x.setDate(i+1);if(x.getMonth()!==d.getMonth())break;days.push(x)}
+ let cells=days.map(x=>{let k=key(x),total=allIds().length,done=completedCount(k);return `<div class="histDay ${total&&done===total?"good":""} ${k===key()?"today":""}" onclick="showDay('${k}')">${x.toLocaleDateString(undefined,{weekday:"short"})}<strong>${x.getDate()}</strong>${done}/${total}</div>`}).join("");
+ showModal(`<button class="close" onclick="closeModal()">×</button><h2>📅 Progress History</h2><div class="sub">Your completed days and daily details are saved in this browser.</div><div class="historyGrid">${cells}</div><div id="historyDetail" class="historyDetail"><div class="empty">Tap a day to see its progress.</div></div>`);
+}
+function showDay(k){
+ let s=snapshots[k];if(!s){document.getElementById("historyDetail").innerHTML='<div class="empty">No saved snapshot for this day.</div>';return}
+ let total=0,done=0,rows="";
+ s.sections.forEach(sec=>sec.items.forEach(it=>{total++;if(it.done)done++;rows+=`<div class="detailRow"><span>${esc(sec.name)} · ${esc(it.name)}</span><span>${it.done?"✓ Done":"— Not done"}</span></div>`}));
+ document.getElementById("historyDetail").innerHTML=`<b>${new Date(k+"T12:00:00").toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long"})} — ${Math.round(done/total*100)}%</b>${rows}`;
+}
+function showModal(content){document.getElementById("modalBox").innerHTML=content;document.getElementById("modal").classList.add("show")}
+function closeModal(){document.getElementById("modal").classList.remove("show")}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+render();
+</script>
+</body>
+</html>
